@@ -51,11 +51,49 @@ export const signup = async (req: Request, res: Response) => {
             }
         })
 
-        // TODO: send verification mail
-        await sendVerificationMail(user.email,verificationToken.token);  
+        //  send verification mail
+        await sendVerificationMail(user.email, verificationToken.token);
 
         res.status(201).json({ success: true, message: "User created successfully." });
     } catch (error) {
         res.status(500).json({ success: false, message: "User signup failed." });
+    }
+};
+
+export const verifyEmail = async (req: Request, res: Response) => {
+    const { token } = req.body;
+    try {
+        const tokenFromDB = await prisma.verificationToken.findFirst({
+            where: {
+                token: token,
+                expiresAt: {
+                    gt: new Date()
+                }
+            }
+        });
+
+        if (!tokenFromDB) {
+            res.status(404).json({ success: false, message: "Token is either invalid or expired." });
+            return;
+        }
+
+        const userId = tokenFromDB.userId;
+
+        await prisma.user.update({
+            where: { id: userId },
+            data: { isVerified: true }
+        });
+        
+        await prisma.verificationToken.delete({
+            where: {id: tokenFromDB.id}
+        });
+
+        // TODO: send welcome email (will have to fetch user from db)
+
+        res.status(200).json({success: true, message: "User verified"});
+        return;
+
+    } catch (error) {
+        res.status(400).json({success:false , message: "An error occured"});
     }
 };
