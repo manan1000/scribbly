@@ -1,9 +1,9 @@
 {
-  "name": "@repo/common",
+  "name": "@repo/types",
   "version": "1.0.0",
   "main": "index.js",
   "exports": {
-    "./types": "./src/types.ts"
+    "./authTypes": "./src/authTypes/authTypes.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -11,11 +11,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
-  "devDependencies": {
-    "@repo/typescript-config": "workspace:*"
-  },
-  "dependencies": {
-    "zod": "^3.24.1"
-  }
+  "description": ""
 }

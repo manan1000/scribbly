@@ -1,5 +1,5 @@
 {
-  "name": "scribbly",
+  "name": "scribbly-main",
   "private": true,
   "scripts": {
     "build": "turbo build",

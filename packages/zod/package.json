@@ -1,9 +1,9 @@
 {
-  "name": "@repo/backend-common",
+  "name": "@repo/zod",
   "version": "1.0.0",
   "main": "index.js",
   "exports": {
-    "./config": "./src/config.ts"
+    "./validators": "./src/index.ts"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"
@@ -12,8 +12,10 @@
   "author": "",
   "license": "ISC",
   "description": "",
+  "dependencies": {
+    "zod": "^3.24.1"
+  },
   "devDependencies": {
-    "@repo/typescript-config": "workspace:*",
-    "@types/node": "^22.10.7"
+    "@repo/typescript-config": "workspace:*"
   }
 }

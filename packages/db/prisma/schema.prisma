@@ -1,3 +1,9 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
+// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -7,31 +13,58 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-
-model User{
-  id        String  @id @default(uuid())
-  email     String  @unique
-  password  String
-  name      String
-  photo     String?
-  rooms     Room[]
-  chats     Chat[]
+model User {
+  id                         Int                 @id @default(autoincrement())
+  email                      String              @unique
+  username                   String              @unique
+  password                   String
+  photo                      String?
+  isVerified                 Boolean             @default(false)
+  lastLogin                  DateTime            @default(now())
+  createdAt                  DateTime            @default(now())
+  updatedAt                  DateTime            @updatedAt
+  drawings                   Drawing[]
+  ResetPassword              ResetPassword[]
+  VerificationToken          VerificationToken[]
 }
 
-model Room {
-  id          Int           @id @default(autoincrement())
-  room        String        @unique
-  createdAt   DateTime      @default(now())
-  adminId     String
-  admin       User          @relation(fields: [adminId] , references: [id])
-  chats       Chat[]
+model Drawing {
+  id        Int       @id @default(autoincrement())
+  title     String
+  ownerId   Int
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  owner     User      @relation(fields: [ownerId], references: [id])
+  elements  Element[]
 }
 
-model Chat{
-  id        Int             @id @default(autoincrement())
-  roomId    Int           
-  message   String        
-  usedId    String     
-  room      Room            @relation(fields: [roomId] , references: [id])   
-  user      User            @relation(fields: [usedId],references: [id])
+model Element {
+  id          Int     @id @default(autoincrement())
+  type        String // shape type (rectangle ,circle, text....)
+  x           Float
+  y           Float
+  width       Float
+  height      Float
+  content     String? // for text content
+  strokeColor String? // border color of element
+  drawingId   Int
+  drawing     Drawing @relation(fields: [drawingId], references: [id])
+}
+
+model ResetPassword {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  token     String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
 }
