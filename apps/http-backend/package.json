@@ -24,6 +24,7 @@
     "@repo/zod": "workspace:*",
     "@types/bcryptjs": "^2.4.6",
     "@types/cookie-parser": "^1.4.8",
-    "@types/express": "^5.0.0"
+    "@types/express": "^5.0.0",
+    "dotenv": "^16.4.7"
   }
 }

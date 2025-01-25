@@ -4,6 +4,7 @@ import { signupValidator } from "@repo/zod/validators";
 import prisma from "@repo/db/client";
 import bcrypt from "bcryptjs"
 import GenerateVerificationToken from "../utils/GenerateVerificationToken";
+import { sendVerificationMail } from "../email/email";
 
 
 export const signup = async (req: Request, res: Response) => {
@@ -42,7 +43,7 @@ export const signup = async (req: Request, res: Response) => {
 
         // save verification token to db
 
-        await prisma.verificationToken.create({
+        const verificationToken = await prisma.verificationToken.create({
             data: {
                 userId: user.id,
                 token: GenerateVerificationToken(),
@@ -51,9 +52,10 @@ export const signup = async (req: Request, res: Response) => {
         })
 
         // TODO: send verification mail
+        await sendVerificationMail(user.email,verificationToken.token);  
 
         res.status(201).json({ success: true, message: "User created successfully." });
     } catch (error) {
         res.status(500).json({ success: false, message: "User signup failed." });
     }
-}
+};
