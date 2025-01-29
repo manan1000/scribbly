@@ -4,7 +4,7 @@ import { signupValidator } from "@repo/zod/validators";
 import prisma from "@repo/db/client";
 import bcrypt from "bcryptjs"
 import GenerateVerificationToken from "../utils/GenerateVerificationToken";
-import { sendVerificationMail } from "../email/email";
+import { sendVerificationMail, sendWelcomeMail } from "../email/email";
 
 
 export const signup = async (req: Request, res: Response) => {
@@ -89,11 +89,33 @@ export const verifyEmail = async (req: Request, res: Response) => {
         });
 
         // TODO: send welcome email (will have to fetch user from db)
+        const user = await prisma.user.findFirst({
+            where: {
+                id: userId
+            }
+        });
+
+        if(!user){
+            res.status(404).json({success: false, message: "User not found"});
+            return;
+        }
+
+        await sendWelcomeMail(user.email, user.username);
 
         res.status(200).json({success: true, message: "User verified"});
         return;
 
     } catch (error) {
         res.status(400).json({success:false , message: "An error occured"});
+    }
+};
+
+
+export const signin = async (req: Request, res: Response) => {
+    const {email,password} = req.body;
+    try {
+        
+    } catch (error) {
+        
     }
 };
