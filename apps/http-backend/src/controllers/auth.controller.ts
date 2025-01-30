@@ -1,10 +1,11 @@
 import { Request, Response, NextFunction } from "express";
-import { signupData } from "@repo/types/authTypes";
+import { signinData, signupData } from "@repo/types/authTypes";
 import { signupValidator } from "@repo/zod/validators";
 import prisma from "@repo/db/client";
 import bcrypt from "bcryptjs"
 import GenerateVerificationToken from "../utils/GenerateVerificationToken";
 import { sendVerificationMail, sendWelcomeMail } from "../email/email";
+import GenerateJwtTokenAndSetCookie from "../utils/GenerateJwtTokenAndSetCookie";
 
 
 export const signup = async (req: Request, res: Response) => {
@@ -83,9 +84,9 @@ export const verifyEmail = async (req: Request, res: Response) => {
             where: { id: userId },
             data: { isVerified: true }
         });
-        
+
         await prisma.verificationToken.delete({
-            where: {id: tokenFromDB.id}
+            where: { id: tokenFromDB.id }
         });
 
         // TODO: send welcome email (will have to fetch user from db)
@@ -95,27 +96,60 @@ export const verifyEmail = async (req: Request, res: Response) => {
             }
         });
 
-        if(!user){
-            res.status(404).json({success: false, message: "User not found"});
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found" });
             return;
         }
 
         await sendWelcomeMail(user.email, user.username);
 
-        res.status(200).json({success: true, message: "User verified"});
+        res.status(200).json({ success: true, message: "User verified" });
         return;
 
     } catch (error) {
-        res.status(400).json({success:false , message: "An error occured"});
+        res.status(400).json({ success: false, message: "An error occured" });
     }
 };
 
 
 export const signin = async (req: Request, res: Response) => {
-    const {email,password} = req.body;
+    const { email, password }: signinData = req.body;
     try {
-        
+
+        const user = await prisma.user.findUnique({
+            where: {
+                email: email
+            }
+        });
+
+        if (!user) {
+            res.status(404).json({ success: false, message: "User with this email does not exist." });
+            return;
+        }
+        const isPasswordValid = await bcrypt.compare(password,user.password);
+
+        if (!isPasswordValid) {
+            res.status(401).json({ success: false, message: "Invalid credentials." });
+            return;
+        }
+
+        GenerateJwtTokenAndSetCookie(res, user.id.toString());
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { lastLogin: new Date() }
+        })
+
+        res.status(200).json({ success: true, message: "Logged in successfully" });
+
     } catch (error) {
+        console.log(error);
         
+        res.status(400).json({ success: false, message: "There was an error while logging in" });
     }
+};
+
+
+export const logout = async (req: Request, res: Response) => {
+    res.clearCookie("token");
+    res.status(200).json({success: true, message: "Logout successful"});
 };
