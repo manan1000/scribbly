@@ -126,7 +126,7 @@ export const signin = async (req: Request, res: Response) => {
             res.status(404).json({ success: false, message: "User with this email does not exist." });
             return;
         }
-        const isPasswordValid = await bcrypt.compare(password,user.password);
+        const isPasswordValid = await bcrypt.compare(password, user.password);
 
         if (!isPasswordValid) {
             res.status(401).json({ success: false, message: "Invalid credentials." });
@@ -143,7 +143,7 @@ export const signin = async (req: Request, res: Response) => {
 
     } catch (error) {
         console.log(error);
-        
+
         res.status(400).json({ success: false, message: "There was an error while logging in" });
     }
 };
@@ -151,5 +151,31 @@ export const signin = async (req: Request, res: Response) => {
 
 export const logout = async (req: Request, res: Response) => {
     res.clearCookie("token");
-    res.status(200).json({success: true, message: "Logout successful"});
+    res.status(200).json({ success: true, message: "Logout successful" });
+};
+
+
+export const checkAuth = async (req: Request, res: Response) => {
+    const userId = req.userId; 
+    
+    if (typeof userId === 'undefined') {
+        res.status(404).json({ success: false, message: "Invalid user id" });
+        return;
+    }
+    
+    try {
+
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId) }
+        });
+
+        if(!user){
+            res.status(404).json({success: false, message: "User not found."});
+        }
+
+        res.status(200).json({success: true, message: "User is authenticated."});
+
+    } catch (error) {
+        res.status(500).json({success: false, message: "An error occured"});
+    }
 };
