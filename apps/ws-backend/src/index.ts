@@ -1,6 +1,7 @@
 import Websocket, { WebSocketServer } from "ws";
 import jwt from "jsonwebtoken";
 import dotenv from "dotenv";
+import prisma from "@repo/db/client";
 
 dotenv.config();
 
@@ -12,19 +13,95 @@ const rooms: Record<string, Set<Websocket>> = {};
 const wss = new WebSocketServer({ port: Number(PORT) });
 
 
-function checkUser(token: string): string | null {
+function checkUser(token: string): number | null {
     try {
         const decoded = jwt.verify(token, JWT_SECRET as string);
         if (typeof decoded === "string") {
             return null;
         }
 
-        return decoded.userId || null;
+        return Number(decoded.userId) || null;
 
     } catch (error) {
         return null;
     }
 }
+
+
+async function loadRooms() {
+    const activeRooms = await prisma.room.findMany();
+
+    activeRooms.forEach((room) => {
+        rooms[room.roomName] = new Set();
+    });
+
+    console.log(`Loaded active rooms `, Object.keys(rooms));
+}
+
+
+
+async function joinRoom(userId: number, roomName: string, ws: Websocket) {
+    let room = await prisma.room.findUnique({
+        where: { roomName: roomName }
+    });
+
+    if (!room) {
+        room = await prisma.room.create({
+            data: {
+                roomName
+            }
+        });
+    }
+
+    await prisma.userRoom.upsert({
+        where: {
+            userId_roomId: {
+                userId: userId,
+                roomId: room.id
+            }
+        },
+
+        update: {},
+
+        create: {
+            userId: userId,
+            roomId: room.id
+        }
+    });
+
+    if (!rooms[roomName]) {
+        rooms[roomName] = new Set();
+    }
+
+    rooms[roomName].add(ws);
+    ws.send(JSON.stringify({ message: `Joined room: ${roomName}` }));
+    console.log(`User ${userId} joined room ${roomName}`);
+}
+
+async function leaveRoom(userId: number, roomName: string, ws: Websocket) {
+    rooms[roomName]?.delete(ws);
+
+    await prisma.userRoom.deleteMany({
+        where: {
+            userId: userId,
+            room: { roomName }
+        }
+    });
+
+    if (rooms[roomName]?.size === 0) {
+        delete rooms[roomName];
+
+        await prisma.room.deleteMany({
+            where: { roomName }
+        });
+    }
+
+    console.log(`User: ${userId} left room: ${roomName}`);
+    
+}
+
+
+
 wss.on("connection", (ws, request) => {
     const url = request.url;
     if (!url) {
@@ -38,7 +115,7 @@ wss.on("connection", (ws, request) => {
 
 
     if (!userId) {
-        ws.send("Authentication failed. Please log in again.");
+        ws.send("Authentication failed. Please signin.");
         ws.close();
         return;
     }
@@ -46,32 +123,20 @@ wss.on("connection", (ws, request) => {
     let currentRoom: string | null = null;
     console.log(`User: ${userId} connected`);
 
-    ws.on("message", (message: string) => {
+    ws.on("message", async (message: string) => {
 
         try {
             const parsedData = JSON.parse(message);
 
             if (parsedData.type === "join_room") {
-                const roomId = parsedData.roomId;
+                const roomName = parsedData.roomName;
 
-                if (!roomId) {
-                    ws.send(JSON.stringify({ error: "roomId is required" }));
+                if (!roomName) {
+                    ws.send(JSON.stringify({ error: "roomName is required" }));
                     return;
                 }
-
-                if (currentRoom) {
-                    rooms[currentRoom]?.delete(ws);
-                }
-
-                if (!rooms[roomId]) {
-                    rooms[roomId] = new Set();
-                }
-
-                rooms[roomId]?.add(ws);   //add current user websocket to room -> set
-                currentRoom = roomId;   
-                ws.send(JSON.stringify({message: `Joined room ${currentRoom}`}));
-
-                console.log(`User: ${userId} joined room: ${roomId}`);
+                await joinRoom(userId, roomName, ws);
+                currentRoom = roomName;
             }
 
             if (parsedData.type === "chat") {
@@ -91,39 +156,29 @@ wss.on("connection", (ws, request) => {
                 });
             }
 
-            if(parsedData.type === "leave_room"){
-                if(currentRoom){
-                    rooms[currentRoom]?.delete(ws);
-
-                    ws.send(JSON.stringify({ message: `You left ${currentRoom}` }));
-                    console.log(`User: ${userId} left room: ${currentRoom}`);
-                    
-
-                    if(rooms[currentRoom]?.size === 0){
-                        delete rooms[currentRoom];
-                    }
+            if (parsedData.type === "leave_room") {
+                if (currentRoom) {
+                    await leaveRoom(userId,currentRoom,ws);
+                    currentRoom=null;
                 }
             }
 
 
         } catch (error) {
+            console.log(error);
+            
             ws.send(JSON.stringify({ error: "Invalid JSON format" }));
         }
 
     });
 
-    ws.on("close", ()=>{
-        if(currentRoom){
-            rooms[currentRoom]?.delete(ws);
-
-            console.log(`User: ${userId} left room: ${currentRoom}`);
-
-            if(rooms[currentRoom]?.size === 0){
-                delete rooms[currentRoom];
-            }
+    ws.on("close", async () => {
+        if (currentRoom) {
+            await leaveRoom(userId,currentRoom,ws);
+            currentRoom=null;
         }
-        
     });
 });
 
 console.log(`WebSocket server running on ws://localhost:${PORT}`);
+loadRooms();    // load active rooms
