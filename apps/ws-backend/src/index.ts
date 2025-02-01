@@ -42,29 +42,41 @@ async function loadRooms() {
 
 async function joinRoom(userId: number, roomName: string, ws: Websocket) {
     let room = await prisma.room.findUnique({
-        where: { roomName: roomName }
+        where: { roomName }
+    });
+
+    let drawing = await prisma.drawing.findUnique({
+        where: { roomName },
+        include: { elements: true }
     });
 
     if (!room) {
         room = await prisma.room.create({
+            data: { roomName }
+        });
+    }
+
+    if (!drawing) {
+        drawing = await prisma.drawing.create({
             data: {
-                roomName
-            }
+                title: `${roomName} drawing`,
+                roomName,
+                ownerId: userId
+            },
+            include: { elements: true }
         });
     }
 
     await prisma.userRoom.upsert({
         where: {
             userId_roomId: {
-                userId: userId,
+                userId,
                 roomId: room.id
             }
         },
-
         update: {},
-
         create: {
-            userId: userId,
+            userId,
             roomId: room.id
         }
     });
@@ -74,6 +86,13 @@ async function joinRoom(userId: number, roomName: string, ws: Websocket) {
     }
 
     rooms[roomName].add(ws);
+    if (drawing.elements.length>0) {
+        ws.send(JSON.stringify({
+            type: "drawing:load",
+            elements: drawing.elements
+        }));
+    }
+
     ws.send(JSON.stringify({ message: `Joined room: ${roomName}` }));
     console.log(`User ${userId} joined room ${roomName}`);
 }
@@ -83,7 +102,7 @@ async function leaveRoom(userId: number, roomName: string, ws: Websocket) {
 
     await prisma.userRoom.deleteMany({
         where: {
-            userId: userId,
+            userId,
             room: { roomName }
         }
     });
@@ -97,7 +116,7 @@ async function leaveRoom(userId: number, roomName: string, ws: Websocket) {
     }
 
     console.log(`User: ${userId} left room: ${roomName}`);
-    
+
 }
 
 
@@ -139,18 +158,34 @@ wss.on("connection", (ws, request) => {
                 currentRoom = roomName;
             }
 
-            if (parsedData.type === "chat") {
+            if (parsedData.type === "drawing:update") {
                 if (!currentRoom) {
                     ws.send(JSON.stringify({ error: "You are not in a room." }));
                     return;
                 }
-                console.log(`Message in ${currentRoom}: ${parsedData.content}`);
+
+                console.log(parsedData);
+
+
+                const { id, type, x, y, width, height, content, strokeColor, drawingId } = parsedData.element;
+
+
+
+                await prisma.element.upsert({
+                    where: { id: id || -1 },
+                    update: { x, y, width, height, content, strokeColor },
+                    create: { type, x, y, width, height, content, strokeColor, drawingId }
+                });
+
+
+
 
                 rooms[currentRoom]?.forEach((client) => {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(JSON.stringify({
+                            type: "drawing:update",
                             userId: userId,
-                            content: parsedData.content
+                            element: parsedData.element
                         }));
                     }
                 });
@@ -158,15 +193,15 @@ wss.on("connection", (ws, request) => {
 
             if (parsedData.type === "leave_room") {
                 if (currentRoom) {
-                    await leaveRoom(userId,currentRoom,ws);
-                    currentRoom=null;
+                    await leaveRoom(userId, currentRoom, ws);
+                    currentRoom = null;
                 }
             }
 
 
         } catch (error) {
             console.log(error);
-            
+
             ws.send(JSON.stringify({ error: "Invalid JSON format" }));
         }
 
@@ -174,11 +209,12 @@ wss.on("connection", (ws, request) => {
 
     ws.on("close", async () => {
         if (currentRoom) {
-            await leaveRoom(userId,currentRoom,ws);
-            currentRoom=null;
+            await leaveRoom(userId, currentRoom, ws);
+            currentRoom = null;
         }
     });
 });
 
 console.log(`WebSocket server running on ws://localhost:${PORT}`);
 loadRooms();    // load active rooms
+

@@ -27,11 +27,11 @@ model Drawing {
   id        Int       @id @default(autoincrement())
   title     String
   ownerId   Int
+  roomName  String    @unique
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   owner     User      @relation(fields: [ownerId], references: [id])
   elements  Element[]
-  room      Room?
 }
 
 model Element {
@@ -45,6 +45,25 @@ model Element {
   strokeColor String? // border color of element
   drawingId   Int
   drawing     Drawing @relation(fields: [drawingId], references: [id])
+}
+
+model Room {
+  id        Int        @id @default(autoincrement())
+  roomName  String     @unique
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+  users     UserRoom[]
+}
+
+model UserRoom {
+  id       Int      @id @default(autoincrement())
+  userId   Int
+  roomId   Int
+  joinedAt DateTime @default(now())
+  user     User     @relation(fields: [userId], references: [id])
+  room     Room     @relation(fields: [roomId], references: [id])
+
+  @@unique([userId, roomId]) // ensure uniqueness for userId and roomId
 }
 
 model ResetPassword {
@@ -63,25 +82,4 @@ model VerificationToken {
   expiresAt DateTime
   createdAt DateTime @default(now())
   user      User     @relation(fields: [userId], references: [id])
-}
-
-model Room {
-  id        Int        @id @default(autoincrement())
-  roomName  String     @unique
-  drawingId Int?       @unique
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
-  drawing   Drawing?   @relation(fields: [drawingId], references: [id])
-  users     UserRoom[]
-}
-
-model UserRoom {
-  id       Int      @id @default(autoincrement())
-  userId   Int
-  roomId   Int
-  joinedAt DateTime @default(now())
-  user     User     @relation(fields: [userId], references: [id])
-  room     Room     @relation(fields: [roomId], references: [id])
-
-  @@unique([userId, roomId])  // ensure uniqueness for userId and roomId
 }
