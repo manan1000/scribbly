@@ -13,12 +13,13 @@ app.use(cors({
     origin: "http://localhost:3000",
     credentials: true
 }))
+app.options("*", cors());
 app.use(express.json());
 app.use(cookieParser());
 
 
-app.use("/api/v1/auth",authRoutes);
+app.use("/api/v1/auth", authRoutes);
 
-app.listen(PORT,()=>{
-    console.log("Server is running on port: "+PORT);
+app.listen(PORT, () => {
+    console.log("Server is running on port: " + PORT);
 })

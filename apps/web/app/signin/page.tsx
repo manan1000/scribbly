@@ -13,11 +13,11 @@ export default function Login() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    console.log(form);
     
-    const res = await fetch("http://localhost:5000/api/v1/auth/signin", {
+    const res = await fetch(`http://localhost:5000/api/v1/auth/signin`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
+      credentials: "include",
       body: JSON.stringify(form),
     });
     if (res.ok) router.push("/dashboard");

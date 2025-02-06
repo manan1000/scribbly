@@ -18,7 +18,7 @@ export default function Signup() {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(form),
     });
-    if (res.ok) router.push("/login");
+    if (res.ok) router.push("/signin");
   };
 
   return (

@@ -1,27 +1,25 @@
-import Image, { type ImageProps } from "next/image";
-import { Button } from "@repo/ui/button";
-import styles from "./page.module.css";
+"use client";
 
-type Props = Omit<ImageProps, "src"> & {
-  srcLight: string;
-  srcDark: string;
-};
+import { useRouter } from "next/navigation";
+import { useEffect } from "react";
 
-const ThemeImage = (props: Props) => {
-  const { srcLight, srcDark, ...rest } = props;
-
-  return (
-    <>
-      <Image {...rest} src={srcLight} className="imgLight" />
-      <Image {...rest} src={srcDark} className="imgDark" />
-    </>
-  );
-};
 
 export default function Home() {
-  return(
-    <div className="text-5xl bg-amber-500">
-      Hello
-    </div>
-  );
+
+  const router = useRouter();
+
+  useEffect(() => {
+    const checkAuthentication = async () => {
+      const res = await fetch("http://localhost:5000/api/v1/auth/check-auth", {
+        method: "GET",
+        credentials: "include"
+      });
+
+      if (res.ok) router.push("/dashboard");
+      else router.push("/signup");
+    }
+
+    checkAuthentication();
+  }, [router]);
+  return (<></>);
 }
