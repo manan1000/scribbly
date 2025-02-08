@@ -1,6 +1,7 @@
 import express from "express";
 import cookieParser from "cookie-parser";
 import authRoutes from "./routes/auth.route";
+import drawingRoutes from "./routes/drawings.route";
 import dotenv from "dotenv";
 import cors from "cors";
 
@@ -19,6 +20,7 @@ app.use(cookieParser());
 
 
 app.use("/api/v1/auth", authRoutes);
+app.use("/api/v1/drawings", drawingRoutes);
 
 app.listen(PORT, () => {
     console.log("Server is running on port: " + PORT);

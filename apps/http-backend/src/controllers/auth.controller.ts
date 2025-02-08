@@ -179,3 +179,30 @@ export const checkAuth = async (req: Request, res: Response) => {
         res.status(500).json({success: false, message: "An error occured"});
     }
 };
+
+
+
+export const getUsername = async (req: Request, res: Response) => {
+    const userId = req.userId; 
+    
+    if (typeof userId === 'undefined') {
+        res.status(404).json({ success: false, message: "Invalid user id" });
+        return;
+    }
+    
+    try {
+
+        const user = await prisma.user.findUnique({
+            where: { id: parseInt(userId) }
+        });
+
+        if(!user){
+            res.status(404).json({success: false, message: "User not found."});
+        }
+
+        res.status(200).json({success: true, username: user?.username});
+
+    } catch (error) {
+        res.status(500).json({success: false, message: "An error occured"});
+    }
+};

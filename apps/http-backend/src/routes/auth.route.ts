@@ -1,5 +1,5 @@
 import express, { Router } from "express";
-import { checkAuth, logout, signin, signup, verifyEmail } from "../controllers/auth.controller";
+import { checkAuth, logout, signin, signup, verifyEmail ,getUsername } from "../controllers/auth.controller";
 import { verifyToken } from "../middleware/verifyToken";
 
 
@@ -10,5 +10,6 @@ router.post("/verify-email", verifyEmail);
 router.post("/signin", signin);
 router.get("/logout", logout);
 router.get("/check-auth", verifyToken, checkAuth);
+router.get("/get-username", verifyToken, getUsername);
 
 export default router;

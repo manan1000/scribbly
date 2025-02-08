@@ -1,21 +1,55 @@
 "use client";
 import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useLogout } from "../../hooks/useLogout";
 import { DrawingCard } from "../components/DrawingCard";
 
 
 export default function Dashboard() {
-    const drawings = [
-        { id: 1, title: "Landscape Drawing" },
-        { id: 2, title: "Portrait Sketch" },
-        { id: 3, title: "Abstract Art" },
-        { id: 4, title: "Still Life Study" }
-    ];
+    
+    const [drawings, setDrawings] = useState<{ id: string; title: string, roomName: string }[]>([]);
     const { authenticated, loading } = useAuth();
     const logout = useLogout();
     const router = useRouter();
+    const username = useRef(null);
+
+    useEffect(() => {
+
+        const fetchUsername = async() =>{
+            try{
+                const res = await fetch("http://localhost:5000/api/v1/auth/get-username",{
+                    method: "GET",
+                    credentials: "include"
+                });
+                
+                if(res.ok) {
+                    const data = await res.json();
+                    username.current = data.username;
+                }
+            } catch (error){
+                router.push("/login");
+            }
+        }
+
+        const fetchDrawings = async () => {
+          try {
+            const res = await fetch("http://localhost:5000/api/v1/drawings", {
+              credentials: "include",
+            });
+            if (res.ok) {
+              const data = await res.json();
+              setDrawings(data.drawings);
+            }
+          } catch (error) {
+            console.error("Failed to fetch drawings:", error);
+          }
+        };
+        
+        fetchUsername();
+        fetchDrawings();
+      }, []);
+
 
     if (loading) return <p className="text-3xl text-center mt-20">Loading...</p>
 
@@ -25,7 +59,7 @@ export default function Dashboard() {
         <div className="w-[1320px] mt-10 min-h-screen mx-auto " >
             <div className="flex justify-between">
                 <div className="flex justify-center items-center">
-                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Welcome username!</h2>
+                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Welcome {username.current}!</h2>
                 </div>
                 <div className="flex justify-end gap-3">
                     <button
@@ -56,7 +90,7 @@ export default function Dashboard() {
                         <span>{drawing.title}</span>
                         <button
                         className="text-blue-500"
-                        onClick={() => router.push(`/drawing/${drawing.id}`)}
+                        onClick={() => router.push(`/drawing/${drawing.roomName}/${drawing.id}`)}
                         >
                         Open
                         </button>
