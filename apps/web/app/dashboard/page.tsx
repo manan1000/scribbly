@@ -3,53 +3,79 @@ import { useRouter } from "next/navigation";
 import { useAuth } from "../../hooks/useAuth";
 import { useEffect, useRef, useState } from "react";
 import { useLogout } from "../../hooks/useLogout";
-import { DrawingCard } from "../components/DrawingCard";
 
 
 export default function Dashboard() {
-    
+
     const [drawings, setDrawings] = useState<{ id: string; title: string, roomName: string }[]>([]);
+    const [error,setError] = useState("");
     const { authenticated, loading } = useAuth();
     const logout = useLogout();
     const router = useRouter();
-    const username = useRef(null);
+    const [username, setUsername] = useState("");
 
     useEffect(() => {
 
-        const fetchUsername = async() =>{
-            try{
-                const res = await fetch("http://localhost:5000/api/v1/auth/get-username",{
+        const fetchUsername = async () => {
+            try {
+                const res = await fetch("http://localhost:5000/api/v1/auth/get-username", {
                     method: "GET",
                     credentials: "include"
                 });
-                
-                if(res.ok) {
+
+                if (res.ok) {
                     const data = await res.json();
-                    username.current = data.username;
+                    setUsername(data.username);
                 }
-            } catch (error){
+            } catch (error) {
+                setError("Failed to fetch username");
                 router.push("/login");
             }
         }
 
         const fetchDrawings = async () => {
-          try {
-            const res = await fetch("http://localhost:5000/api/v1/drawings", {
-              credentials: "include",
-            });
-            if (res.ok) {
-              const data = await res.json();
-              setDrawings(data.drawings);
+            try {
+                const res = await fetch("http://localhost:5000/api/v1/drawings/get-drawings", {
+                    credentials: "include",
+                });
+                if (res.ok) {
+                    const data = await res.json();
+                    setDrawings(data.drawings);
+                }
+            } catch (error) {
+                console.error("Failed to fetch drawings:", error);
+                setError("Failed to fetch draeings");
             }
-          } catch (error) {
-            console.error("Failed to fetch drawings:", error);
-          }
         };
-        
+
         fetchUsername();
         fetchDrawings();
-      }, []);
+    }, []);
 
+    const createNewDrawing = async () => {
+
+        try{
+            const res = await fetch("http://localhost:5000/api/v1/drawings/create",{
+                method: "POST",
+                credentials: "include",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({
+                    title: "untitled drawing"
+                })
+            });
+
+            if(res.ok) {
+                const data = await res.json();
+                router.push(`/drawing/${data.roomName}/${data.id}`)
+            } else{
+                setError("Failed to create a new drawinf");
+            }
+        } catch(error){
+            setError("Failed to create a new drawinf");
+        }
+    }
 
     if (loading) return <p className="text-3xl text-center mt-20">Loading...</p>
 
@@ -59,13 +85,11 @@ export default function Dashboard() {
         <div className="w-[1320px] mt-10 min-h-screen mx-auto " >
             <div className="flex justify-between">
                 <div className="flex justify-center items-center">
-                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Welcome {username.current}!</h2>
+                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Welcome {username}!</h2>
                 </div>
                 <div className="flex justify-end gap-3">
                     <button
-                        onClick={() => {
-                            console.log("create new drawing");
-                        }}
+                        onClick={createNewDrawing}
 
                         className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 text-center cursor-pointer"
                     >
@@ -80,48 +104,28 @@ export default function Dashboard() {
                 </div>
             </div>
             
+            {error && <p className="text-red-500 mt-4">{error}</p>}
+
             <div className="mt-6 w-80">
                 {drawings.length > 0 ? (
                     drawings.map((drawing) => (
-                    <div
-                        key={drawing.id}
-                        className="flex justify-between items-center p-2 border-b"
-                    >
-                        <span>{drawing.title}</span>
-                        <button
-                        className="text-blue-500"
-                        onClick={() => router.push(`/drawing/${drawing.roomName}/${drawing.id}`)}
+                        <div
+                            key={drawing.id}
+                            className="flex justify-between items-center p-2 border-b"
                         >
-                        Open
-                        </button>
-                    </div>
+                            <span>{drawing.title}</span>
+                            <button
+                                className="text-blue-500"
+                                onClick={() => router.push(`/drawing/${drawing.roomName}/${drawing.id}`)}
+                            >
+                                Open
+                            </button>
+                        </div>
                     ))
                 ) : (
                     <p className="text-gray-500">No drawings yet.</p>
                 )}
             </div>
-
-            {/* <div className="mt-20 flex flex-col">
-                {drawings.length > 0 ? (
-                    drawings.map((drawing) => (
-                        <DrawingCard key={drawing.id} title={drawing.title} />
-                    ))
-                ): (
-                    <div className="flex flex-col justify-center items-center space-y-6 ">
-                        <p className="text-center text-2xl">No drawings yet !</p>
-                        <button
-                            onClick={() => {
-                                console.log("create new drawing");
-                            }}
-
-                            className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-700 text-center cursor-pointer w-fit"
-                        >
-                        Create new drawing
-                    </button>
-                    </div>
-                ) }
-            </div> */}
-
         </div>
     );
 }

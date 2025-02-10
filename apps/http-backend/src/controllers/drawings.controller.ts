@@ -13,9 +13,29 @@ export const getDrawings = async (req: Request, res: Response) => {
             }
         });
 
-        res.status(200).json({success: true, drawings: userDrawings});
+        res.status(200).json({ success: true, drawings: userDrawings });
+        return;
+    } catch (error) {
+        res.status(500).json({ success: false, message: "unable to fetch user drawings" });
+    }
+};
+
+
+export const createDrawing = async (req: Request, res: Response) => {
+    const { title } = req.body;
+    const roomName = crypto.randomUUID();
+    try {
+        const drawing = await prisma.drawing.create({
+            data: {
+                title,
+                roomName,
+                ownerId: Number(req.userId)
+            }
+        });
+
+        res.status(201).json({ success: true, id: drawing.id, roomName: drawing.roomName });
         return;
     } catch(error){
-        res.status(500).json({success: false, message: "unable to fetch user drawings"});
+        res.status(500).json({ success: false, message: "unable to create drawing" });
     }
 }
