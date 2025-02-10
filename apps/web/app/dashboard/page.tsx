@@ -28,8 +28,8 @@ export default function Dashboard() {
                     setUsername(data.username);
                 }
             } catch (error) {
-                setError("Failed to fetch username");
                 router.push("/login");
+                setError("Failed to fetch username");
             }
         }
 
@@ -44,13 +44,13 @@ export default function Dashboard() {
                 }
             } catch (error) {
                 console.error("Failed to fetch drawings:", error);
-                setError("Failed to fetch draeings");
+                setError("Failed to fetch drawings");
             }
         };
 
         fetchUsername();
         fetchDrawings();
-    }, []);
+    }, [router]);
 
     const createNewDrawing = async () => {
 
@@ -73,7 +73,7 @@ export default function Dashboard() {
                 setError("Failed to create a new drawinf");
             }
         } catch(error){
-            setError("Failed to create a new drawinf");
+            setError("Failed to create a new drawing");
         }
     }
 

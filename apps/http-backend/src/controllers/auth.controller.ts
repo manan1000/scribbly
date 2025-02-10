@@ -1,12 +1,11 @@
 import { Request, Response, NextFunction } from "express";
 import { signinData, signupData } from "@repo/types/authTypes";
 import { signupValidator } from "@repo/zod/validators";
-import prisma from "@repo/db/client";
 import bcrypt from "bcryptjs"
+import prisma from "@repo/db/client";
 import GenerateVerificationToken from "../utils/GenerateVerificationToken";
 import { sendVerificationMail, sendWelcomeMail } from "../email/email";
 import GenerateJwtTokenAndSetCookie from "../utils/GenerateJwtTokenAndSetCookie";
-
 
 export const signup = async (req: Request, res: Response) => {
     const { email, username, password }: signupData = req.body;
@@ -156,53 +155,59 @@ export const logout = async (req: Request, res: Response) => {
 
 
 export const checkAuth = async (req: Request, res: Response) => {
-    const userId = req.userId; 
-    
+    const userId = req.userId;
+
     if (typeof userId === 'undefined') {
         res.status(404).json({ success: false, message: "Invalid user id" });
         return;
     }
-    
+
     try {
 
         const user = await prisma.user.findUnique({
             where: { id: parseInt(userId) }
         });
 
-        if(!user){
-            res.status(404).json({success: false, message: "User not found."});
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found." });
         }
 
-        res.status(200).json({success: true, message: "User is authenticated."});
+        res.status(200).json({ success: true, message: "User is authenticated." });
 
     } catch (error) {
-        res.status(500).json({success: false, message: "An error occured"});
+        res.status(500).json({ success: false, message: "An error occured" });
     }
 };
 
 
 
 export const getUsername = async (req: Request, res: Response) => {
-    const userId = req.userId; 
-    
+    const userId = req.userId;
+
     if (typeof userId === 'undefined') {
         res.status(404).json({ success: false, message: "Invalid user id" });
         return;
     }
-    
+
     try {
 
         const user = await prisma.user.findUnique({
             where: { id: parseInt(userId) }
         });
 
-        if(!user){
-            res.status(404).json({success: false, message: "User not found."});
+        if (!user) {
+            res.status(404).json({ success: false, message: "User not found." });
         }
 
-        res.status(200).json({success: true, username: user?.username});
+        res.status(200).json({ success: true, username: user?.username });
 
     } catch (error) {
-        res.status(500).json({success: false, message: "An error occured"});
+        res.status(500).json({ success: false, message: "An error occured" });
     }
+};
+
+
+export const getToken = async (req: Request, res: Response) => {
+    const token = req.cookies.token;
+    res.status(200).json({ success: true, token });
 };
