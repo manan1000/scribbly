@@ -1,0 +1,4 @@
+-- AlterTable
+ALTER TABLE "Element" ADD COLUMN     "points" JSONB,
+ALTER COLUMN "width" DROP NOT NULL,
+ALTER COLUMN "height" DROP NOT NULL;

@@ -35,17 +35,19 @@ model Drawing {
 }
 
 model Element {
-  id          Int     @id @default(autoincrement())
-  type        String // shape type (rectangle ,circle, text....)
+  id          Int      @id @default(autoincrement())
+  type        String   // rectangle, circle, text, line, arrow, etc.
   x           Float
   y           Float
-  width       Float
-  height      Float
-  content     String? // for text content
-  strokeColor String? // border color of element
+  width       Float?   // Optional for lines and arrows
+  height      Float?   // Optional for lines and arrows
+  content     String?  // Only used for text elements
+  strokeColor String?  // Border color of the element
+  points      Json?    // Used only for lines, arrows, freehand drawings
   drawingId   Int
   drawing     Drawing @relation(fields: [drawingId], references: [id])
 }
+
 
 model Room {
   id        Int        @id @default(autoincrement())

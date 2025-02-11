@@ -86,7 +86,7 @@ async function joinRoom(userId: number, roomName: string, ws: Websocket) {
     }
 
     rooms[roomName].add(ws);
-    if (drawing.elements.length>0) {
+    if (drawing.elements.length > 0) {
         ws.send(JSON.stringify({
             type: "drawing:load",
             elements: drawing.elements
@@ -167,15 +167,14 @@ wss.on("connection", (ws, request) => {
                 console.log(parsedData);
 
 
-                const { id, type, x, y, width, height, content, strokeColor, drawingId } = parsedData.element;
-
-
+                const { id, type, x, y, width, height, content, strokeColor, points, drawingId } = parsedData.element;
 
                 await prisma.element.upsert({
                     where: { id: id || -1 },
-                    update: { x, y, width, height, content, strokeColor },
-                    create: { type, x, y, width, height, content, strokeColor, drawingId }
+                    update: { x, y, width, height, content, strokeColor, points },
+                    create: { type, x, y, width, height, content, strokeColor, points, drawingId }
                 });
+
 
 
 

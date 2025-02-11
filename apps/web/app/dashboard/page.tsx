@@ -85,7 +85,7 @@ export default function Dashboard() {
         <div className="w-[1320px] mt-10 min-h-screen mx-auto " >
             <div className="flex justify-between">
                 <div className="flex justify-center items-center">
-                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Welcome {username}!</h2>
+                    <h2 className="text-2xl bg-gradient-to-r from-blue-600 to-red-500 text-transparent bg-clip-text">Hello {username}!</h2>
                 </div>
                 <div className="flex justify-end gap-3">
                     <button
@@ -115,7 +115,7 @@ export default function Dashboard() {
                         >
                             <span>{drawing.title}</span>
                             <button
-                                className="text-blue-500"
+                                className="text-blue-500 cursor-pointer"
                                 onClick={() => router.push(`/drawing/${drawing.roomName}/${drawing.id}`)}
                             >
                                 Open
