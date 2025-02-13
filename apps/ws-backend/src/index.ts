@@ -183,6 +183,7 @@ wss.on("connection", (ws, request) => {
                     if (client.readyState === WebSocket.OPEN) {
                         client.send(JSON.stringify({
                             type: "drawing:update",
+                            roomName: parsedData.roomName,
                             userId: userId,
                             element: parsedData.element
                         }));

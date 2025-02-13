@@ -54,11 +54,39 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
+            console.log("WebSocket message received:", data); // Debugging
+
             if (data.type === "drawing:update" && data.roomName === roomName) {
-                setLines((prevLines) => [...prevLines, data.element]);
+                console.log("New element received:", data.element); // Check structure
+
+                setLines((prevLines) => {
+                    console.log("Previous Lines:", prevLines);
+                    console.log("New Element:", data.element);
+                
+                    const updatedLines = [
+                        ...prevLines,
+                        {
+                            id: data.element.id,
+                            points: [...data.element.points], // Ensure array is new
+                            strokeColor: data.element.strokeColor || "black",
+                        },
+                    ];
+                
+                    console.log("Updated Lines State:", updatedLines); // Check new state
+                    return updatedLines;
+                });
+                
+            }
+
+            if (data.type === "drawing:load") {
+                const loadedLines = data.elements.map((element: any) => ({
+                    points: element.points,
+                    strokeColor: element.strokeColor
+                }));
+                setLines(loadedLines);
             }
         }
-    }, [socket]);
+    }, [lines,socket,roomName]);
 
     return (
         <Stage
