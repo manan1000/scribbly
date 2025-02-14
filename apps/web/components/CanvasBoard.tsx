@@ -8,11 +8,24 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
 
     const [lines, setLines] = useState<any[]>([]);
     const [isDrawing, setIsDrawing] = useState(false);
+    const [isErasing, setIsErasing] = useState(false);  // Eraser mode
+    const [tool, setTool] = useState("pen"); // "pen", "eraser"
+    const [strokeWidth, setStrokeWidth] = useState(2); // Default pen size
+
+    const handleToolChange = (selectedTool: string) => {
+        setTool(selectedTool);
+        if (selectedTool === "eraser") {
+            setStrokeWidth(15); // Increase size for eraser
+        } else {
+            setStrokeWidth(2); // Reset for normal drawing
+        }
+    };
+    const toggleEraser = () => setIsErasing(!isErasing);
 
     const handleMouseDown = (e: any) => {
         setIsDrawing(true);
         const pos = e.target.getStage().getPointerPosition();
-        setLines([...lines, { points: [pos.x, pos.y], strokeColor: "black" }]);
+        setLines([...lines, { points: [pos.x, pos.y], strokeColor: isErasing? "white" : "black" }]); 
     };
 
     const handleMouseMove = (e: any) => {
@@ -41,7 +54,8 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
                 height: null,
                 points: lastLine.points,
                 strokeColor: lastLine.strokeColor,
-                drawingId: Number(drawingId)
+                drawingId: Number(drawingId),
+                isEraser: isErasing
             }
         }
 
@@ -54,14 +68,10 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
 
         socket.onmessage = (event) => {
             const data = JSON.parse(event.data);
-            console.log("WebSocket message received:", data); // Debugging
 
             if (data.type === "drawing:update" && data.roomName === roomName) {
-                console.log("New element received:", data.element); // Check structure
 
                 setLines((prevLines) => {
-                    console.log("Previous Lines:", prevLines);
-                    console.log("New Element:", data.element);
                 
                     const updatedLines = [
                         ...prevLines,
@@ -71,8 +81,6 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
                             strokeColor: data.element.strokeColor || "black",
                         },
                     ];
-                
-                    console.log("Updated Lines State:", updatedLines); // Check new state
                     return updatedLines;
                 });
                 
@@ -89,19 +97,27 @@ export default function CanvasBoard({ socket,drawingId, roomName }: { socket: We
     }, [lines,socket,roomName]);
 
     return (
-        <Stage
-            width={1000}
-            height={600}
-            onMouseDown={handleMouseDown}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            className="border border-gray-400 bg-white"
-        >
-            <Layer>
-                {lines.map((line, i) => (
-                    <Line key={i} points={line.points} stroke={line.strokeColor} strokeWidth={2} />
-                ))}
-            </Layer>
-        </Stage>
+        <div>
+            <button 
+                className={`px-4 py-2 text-white rounded mb-1 ${isErasing ? "bg-red-500" : "bg-gray-500"}`}
+                onClick={toggleEraser}
+            >
+                {isErasing ? "Disable Eraser" : "Enable Eraser"}
+            </button>   
+            <Stage
+                width={1000}
+                height={500}
+                onMouseDown={handleMouseDown}
+                onMouseMove={handleMouseMove}
+                onMouseUp={handleMouseUp}
+                className="border border-gray-400 bg-white"
+            >
+                <Layer>
+                    {lines.map((line, i) => (
+                        <Line key={i} points={line.points} stroke={line.strokeColor} strokeWidth={2} />
+                    ))}
+                </Layer>
+            </Stage>
+        </div>
     );
 }

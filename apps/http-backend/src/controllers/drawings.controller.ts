@@ -35,7 +35,44 @@ export const createDrawing = async (req: Request, res: Response) => {
 
         res.status(201).json({ success: true, id: drawing.id, roomName: drawing.roomName });
         return;
-    } catch(error){
+    } catch (error) {
         res.status(500).json({ success: false, message: "unable to create drawing" });
     }
-}
+};
+
+
+export const updateTitle = async (req: Request, res: Response) => {
+    const { title, drawingId } = req.body;
+    try {
+        await prisma.drawing.update({
+            where: { id: Number(drawingId) },
+            data: { title }
+        });
+
+        res.status(201).json({ success: true, message: "title updated successfully" });
+        return;
+    } catch (error) {
+        res.status(500).json({ success: false, message: "unable to update drawing title" });
+    }
+};
+
+
+export const  findDrawing = async (req: Request, res: Response) => {
+    const { id } = req.params;
+    try {
+        const drawing = await prisma.drawing.findUnique({
+            where: { id: Number(id) },
+            select: {
+                id: true,
+                title: true,
+                roomName: true,
+                ownerId: true
+            }
+        });
+
+        res.status(201).json({ success: true, drawing });
+        return;
+    } catch (error) {
+        res.status(500).json({ success: false, message: "unable to update drawing title" });
+    }
+};

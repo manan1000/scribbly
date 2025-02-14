@@ -164,15 +164,13 @@ wss.on("connection", (ws, request) => {
                     return;
                 }
 
-                console.log(parsedData);
 
-
-                const { id, type, x, y, width, height, content, strokeColor, points, drawingId } = parsedData.element;
+                const { id, type, x, y, width, height, content, strokeColor, points, drawingId, isEraser } = parsedData.element;
 
                 await prisma.element.upsert({
                     where: { id: id || -1 },
                     update: { x, y, width, height, content, strokeColor, points },
-                    create: { type, x, y, width, height, content, strokeColor, points, drawingId }
+                    create: { type, x, y, width, height, content, strokeColor, points, drawingId, isEraser }
                 });
 
 
